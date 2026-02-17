@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import AddBookmark from "@/components/AddBookmark";
 import BookmarkList from "@/components/BookmarkList";
 
@@ -8,6 +9,13 @@ interface BookmarkDashboardProps {
 }
 
 export default function BookmarkDashboard({ userId }: BookmarkDashboardProps) {
+    // Incrementing this key forces BookmarkList to re-fetch
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleBookmarkAdded = () => {
+        setRefreshKey((prev) => prev + 1);
+    };
+
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
@@ -23,7 +31,7 @@ export default function BookmarkDashboard({ userId }: BookmarkDashboardProps) {
                 <h2 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">
                     Add New Bookmark
                 </h2>
-                <AddBookmark userId={userId} />
+                <AddBookmark userId={userId} onBookmarkAdded={handleBookmarkAdded} />
             </div>
 
             {/* Bookmark list */}
@@ -31,7 +39,7 @@ export default function BookmarkDashboard({ userId }: BookmarkDashboardProps) {
                 <h2 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">
                     Your Collection
                 </h2>
-                <BookmarkList userId={userId} />
+                <BookmarkList userId={userId} refreshKey={refreshKey} />
             </div>
         </div>
     );

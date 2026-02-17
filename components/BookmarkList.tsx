@@ -14,9 +14,10 @@ interface Bookmark {
 
 interface BookmarkListProps {
     userId: string;
+    refreshKey?: number;
 }
 
-export default function BookmarkList({ userId }: BookmarkListProps) {
+export default function BookmarkList({ userId, refreshKey }: BookmarkListProps) {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchBookmarks, supabase, userId]);
+    }, [fetchBookmarks, supabase, userId, refreshKey]);
 
     const handleDelete = async (id: string) => {
         setDeletingId(id);

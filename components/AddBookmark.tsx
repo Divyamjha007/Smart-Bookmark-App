@@ -34,6 +34,15 @@ export default function AddBookmark({ userId, onBookmarkAdded }: AddBookmarkProp
             setUrl("");
             setTitle("");
             onBookmarkAdded?.();
+
+            // Notify other tabs about the new bookmark
+            try {
+                const channel = new BroadcastChannel("bookmarks-sync");
+                channel.postMessage({ type: "BOOKMARK_CHANGED" });
+                channel.close();
+            } catch {
+                // BroadcastChannel not supported, ignore
+            }
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to add bookmark";
             setError(message);

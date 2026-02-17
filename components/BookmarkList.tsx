@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { RealtimePostgresInsertPayload, RealtimePostgresDeletePayload, RealtimePostgresUpdatePayload } from "@supabase/supabase-js";
 
 interface Bookmark {
     id: string;
@@ -37,7 +36,7 @@ export default function BookmarkList({ userId, refreshKey }: BookmarkListProps) 
         setLoading(false);
     }, [supabase, userId]);
 
-    // Re-fetch when refreshKey changes (from AddBookmark callback)
+    // Re-fetch when refreshKey changes (from AddBookmark callback in same tab)
     useEffect(() => {
         if (refreshKeyRef.current !== refreshKey) {
             refreshKeyRef.current = refreshKey;
@@ -45,65 +44,26 @@ export default function BookmarkList({ userId, refreshKey }: BookmarkListProps) 
         }
     }, [refreshKey, fetchBookmarks]);
 
-    // Stable realtime subscription — only set up once per userId
+    // Listen for cross-tab sync via BroadcastChannel
     useEffect(() => {
         fetchBookmarks();
 
-        const channel = supabase
-            .channel(`bookmarks-sync-${userId}-${Date.now()}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "bookmarks",
-                    filter: `user_id=eq.${userId}`,
-                },
-                (payload: RealtimePostgresInsertPayload<Bookmark>) => {
-                    const newBookmark = payload.new as Bookmark;
-                    setBookmarks((prev) => {
-                        if (prev.some((b) => b.id === newBookmark.id)) return prev;
-                        return [newBookmark, ...prev];
-                    });
+        let channel: BroadcastChannel | null = null;
+        try {
+            channel = new BroadcastChannel("bookmarks-sync");
+            channel.onmessage = (event) => {
+                if (event.data?.type === "BOOKMARK_CHANGED") {
+                    fetchBookmarks();
                 }
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "DELETE",
-                    schema: "public",
-                    table: "bookmarks",
-                },
-                (payload: RealtimePostgresDeletePayload<Bookmark>) => {
-                    const deleted = payload.old as Partial<Bookmark>;
-                    if (deleted.id) {
-                        setBookmarks((prev) => prev.filter((b) => b.id !== deleted.id));
-                    }
-                }
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "UPDATE",
-                    schema: "public",
-                    table: "bookmarks",
-                    filter: `user_id=eq.${userId}`,
-                },
-                (payload: RealtimePostgresUpdatePayload<Bookmark>) => {
-                    const updated = payload.new as Bookmark;
-                    setBookmarks((prev) =>
-                        prev.map((b) => (b.id === updated.id ? updated : b))
-                    );
-                }
-            )
-            .subscribe((status: string) => {
-                console.log("Realtime subscription status:", status);
-            });
+            };
+        } catch {
+            // BroadcastChannel not supported, ignore
+        }
 
         return () => {
-            supabase.removeChannel(channel);
+            channel?.close();
         };
-    }, [supabase, userId, fetchBookmarks]);
+    }, [fetchBookmarks]);
 
     const handleDelete = async (id: string) => {
         setDeletingId(id);
@@ -113,6 +73,15 @@ export default function BookmarkList({ userId, refreshKey }: BookmarkListProps) 
         if (error) {
             console.error("Failed to delete bookmark:", error.message);
             fetchBookmarks();
+        } else {
+            // Notify other tabs about the deletion
+            try {
+                const bc = new BroadcastChannel("bookmarks-sync");
+                bc.postMessage({ type: "BOOKMARK_CHANGED" });
+                bc.close();
+            } catch {
+                // BroadcastChannel not supported, ignore
+            }
         }
         setDeletingId(null);
     };

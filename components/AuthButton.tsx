@@ -3,11 +3,13 @@
 import { createClient } from "@/lib/supabase/client";
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AuthButton() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const supabase = useMemo(() => createClient(), []);
+    const router = useRouter();
 
     useEffect(() => {
         const getUser = async () => {
@@ -23,6 +25,7 @@ export default function AuthButton() {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
             setUser(session?.user ?? null);
+            router.refresh();
         });
 
         return () => subscription.unsubscribe();
@@ -40,6 +43,7 @@ export default function AuthButton() {
     const handleSignOut = async () => {
         await supabase.auth.signOut();
         setUser(null);
+        router.refresh();
     };
 
     if (loading) {

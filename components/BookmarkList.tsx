@@ -158,7 +158,7 @@ export default function BookmarkList({ userId, refreshKey }: BookmarkListProps) 
                     <button
                         onClick={() => handleDelete(bookmark.id)}
                         disabled={deletingId === bookmark.id}
-                        className="flex-shrink-0 p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50 cursor-pointer"
+                        className="flex-shrink-0 p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 disabled:opacity-50 cursor-pointer"
                         title="Delete bookmark"
                     >
                         {deletingId === bookmark.id ? (

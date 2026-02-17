@@ -43,7 +43,7 @@ export default function AuthButton() {
     const handleSignOut = async () => {
         await supabase.auth.signOut();
         setUser(null);
-        router.refresh();
+        window.location.href = "/";
     };
 
     if (loading) {

@@ -1,18 +1,19 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 interface AddBookmarkProps {
     userId: string;
+    onBookmarkAdded?: () => void;
 }
 
-export default function AddBookmark({ userId }: AddBookmarkProps) {
+export default function AddBookmark({ userId, onBookmarkAdded }: AddBookmarkProps) {
     const [url, setUrl] = useState("");
     const [title, setTitle] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,6 +33,7 @@ export default function AddBookmark({ userId }: AddBookmarkProps) {
 
             setUrl("");
             setTitle("");
+            onBookmarkAdded?.();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to add bookmark";
             setError(message);

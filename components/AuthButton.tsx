@@ -1,13 +1,13 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { useEffect, useState, useMemo } from "react";
 
 export default function AuthButton() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     useEffect(() => {
         const getUser = async () => {
@@ -21,12 +21,12 @@ export default function AuthButton() {
 
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
             setUser(session?.user ?? null);
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase.auth]);
+    }, [supabase]);
 
     const handleSignIn = async () => {
         await supabase.auth.signInWithOAuth({

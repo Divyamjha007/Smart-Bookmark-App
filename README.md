@@ -4,7 +4,7 @@ A simple, real-time bookmark manager built with **Next.js**, **Supabase**, and *
 
 ## Live Demo
 
-🔗 **Vercel URL**: smart-bookmark-app-two-lac.vercel.app
+🔗 **Vercel URL**: https://smart-bookmark-app-two-lac.vercel.app
 
 ## Features
 
